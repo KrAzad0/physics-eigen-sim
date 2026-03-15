@@ -1,0 +1,515 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .sim-wrap { font-family: var(--font-sans); padding: 1rem 0; }
+
+  .law-tabs { display: flex; gap: 8px; margin-bottom: 1rem; }
+  .tab-btn {
+    flex: 1; padding: 10px 6px; border-radius: var(--border-radius-lg);
+    border: 2px solid transparent; cursor: pointer;
+    font-size: 13px; font-weight: 500; transition: all 0.2s;
+    background: var(--color-background-secondary);
+    color: var(--color-text-secondary);
+  }
+  .tab-btn.active { color: #fff; border-color: transparent; }
+  .tab-btn.t1.active { background: #7c3aed; }
+  .tab-btn.t2.active { background: #ea580c; }
+  .tab-btn.t3.active { background: #0891b2; }
+  .tab-btn .tab-num { display: block; font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  canvas {
+    width: 100%; border-radius: var(--border-radius-lg);
+    border: 0.5px solid var(--color-border-tertiary);
+    display: block; background: #0f0f1a;
+  }
+
+  .controls {
+    margin-top: 12px; display: flex; flex-direction: column; gap: 10px;
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-lg);
+    padding: 14px 16px;
+    border: 0.5px solid var(--color-border-tertiary);
+  }
+  .ctrl-row { display: flex; align-items: center; gap: 10px; }
+  .ctrl-label { font-size: 12px; color: var(--color-text-secondary); width: 100px; flex-shrink: 0; }
+  .ctrl-val { font-size: 13px; font-weight: 500; color: var(--color-text-primary); width: 52px; text-align: right; flex-shrink: 0; }
+  input[type=range] { flex: 1; }
+
+  .stats-row { display: flex; gap: 8px; margin-top: 10px; }
+  .stat-card {
+    flex: 1; border-radius: var(--border-radius-md); padding: 10px 12px;
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    text-align: center;
+  }
+  .stat-label { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 3px; }
+  .stat-val { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
+
+  .action-row { display: flex; gap: 8px; margin-top: 10px; }
+  .act-btn {
+    flex: 1; padding: 9px; border-radius: var(--border-radius-md);
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary); font-size: 13px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .act-btn:hover { background: var(--color-background-secondary); }
+  .act-btn.primary { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+  .act-btn.primary:hover { background: #6d28d9; }
+  .act-btn.orange { background: #ea580c; color: #fff; border-color: #ea580c; }
+  .act-btn.orange:hover { background: #c2410c; }
+  .act-btn.cyan { background: #0891b2; color: #fff; border-color: #0891b2; }
+  .act-btn.cyan:hover { background: #0e7490; }
+
+  .formula-badge {
+    display: inline-block; padding: 4px 12px;
+    border-radius: 20px; font-size: 13px; font-weight: 500;
+    margin-bottom: 10px;
+  }
+  .fb-purple { background: #ede9fe; color: #5b21b6; }
+  .fb-orange { background: #ffedd5; color: #9a3412; }
+  .fb-cyan   { background: #e0f2fe; color: #0c4a6e; }
+
+  .info-text { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; margin-top: 8px; }
+</style>
+
+<div class="sim-wrap">
+
+  <div class="law-tabs">
+    <button class="tab-btn t1 active" onclick="switchTab(1)">
+      <span class="tab-num">I</span>Inertia
+    </button>
+    <button class="tab-btn t2" onclick="switchTab(2)">
+      <span class="tab-num">II</span>F = ma
+    </button>
+    <button class="tab-btn t3" onclick="switchTab(3)">
+      <span class="tab-num">III</span>Action-Reaction
+    </button>
+  </div>
+
+  <!-- LAW 1: INERTIA -->
+  <div class="panel active" id="panel1">
+    <span class="formula-badge fb-purple">Law I: An object in motion stays in motion</span>
+    <canvas id="c1" height="220"></canvas>
+    <div class="controls">
+      <div class="ctrl-row">
+        <span class="ctrl-label">Surface friction</span>
+        <input type="range" id="friction" min="0" max="100" value="8" step="1" oninput="updateFriction()">
+        <span class="ctrl-val" id="frictionVal">Low</span>
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">Object mass</span>
+        <input type="range" id="mass1" min="10" max="80" value="30" step="1" oninput="updateMass1()">
+        <span class="ctrl-val" id="mass1Val">30 kg</span>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">velocity</div><div class="stat-val" id="vel1">0 m/s</div></div>
+      <div class="stat-card"><div class="stat-label">distance</div><div class="stat-val" id="dist1">0 m</div></div>
+      <div class="stat-card"><div class="stat-label">friction force</div><div class="stat-val" id="fric1">0 N</div></div>
+    </div>
+    <div class="action-row">
+      <button class="act-btn primary" onclick="kick1()">Kick it!</button>
+      <button class="act-btn" onclick="reset1()">Reset</button>
+    </div>
+    <div class="info-text">Zero friction = object slides forever. High friction = it stops quickly. This is inertia!</div>
+  </div>
+
+  <!-- LAW 2: F=ma -->
+  <div class="panel" id="panel2">
+    <span class="formula-badge fb-orange">Law II: F = m × a</span>
+    <canvas id="c2" height="220"></canvas>
+    <div class="controls">
+      <div class="ctrl-row">
+        <span class="ctrl-label">Applied force</span>
+        <input type="range" id="force2" min="10" max="200" value="60" step="1" oninput="updateForce2()">
+        <span class="ctrl-val" id="force2Val">60 N</span>
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">Mass</span>
+        <input type="range" id="mass2" min="5" max="100" value="30" step="1" oninput="updateMass2()">
+        <span class="ctrl-val" id="mass2Val">30 kg</span>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">force</div><div class="stat-val" id="s2f">60 N</div></div>
+      <div class="stat-card"><div class="stat-label">mass</div><div class="stat-val" id="s2m">30 kg</div></div>
+      <div class="stat-card"><div class="stat-label">acceleration</div><div class="stat-val" id="s2a">2.0 m/s²</div></div>
+    </div>
+    <div class="action-row">
+      <button class="act-btn orange" onclick="launch2()">Apply Force!</button>
+      <button class="act-btn" onclick="reset2()">Reset</button>
+    </div>
+    <div class="info-text">Same force, double the mass → half the acceleration. Change the sliders and see F = ma live!</div>
+  </div>
+
+  <!-- LAW 3: ACTION-REACTION -->
+  <div class="panel" id="panel3">
+    <span class="formula-badge fb-cyan">Law III: F₁₂ = −F₂₁</span>
+    <canvas id="c3" height="220"></canvas>
+    <div class="controls">
+      <div class="ctrl-row">
+        <span class="ctrl-label">Mass A (blue)</span>
+        <input type="range" id="massA" min="5" max="80" value="20" step="1" oninput="updateMassA()">
+        <span class="ctrl-val" id="massAVal">20 kg</span>
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">Mass B (pink)</span>
+        <input type="range" id="massB" min="5" max="80" value="40" step="1" oninput="updateMassB()">
+        <span class="ctrl-val" id="massBVal">40 kg</span>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">A velocity</div><div class="stat-val" id="vA">0 m/s</div></div>
+      <div class="stat-card"><div class="stat-label">B velocity</div><div class="stat-val" id="vB">0 m/s</div></div>
+      <div class="stat-card"><div class="stat-label">momentum ✓</div><div class="stat-val" id="mom">0</div></div>
+    </div>
+    <div class="action-row">
+      <button class="act-btn cyan" onclick="explode3()">Explode!</button>
+      <button class="act-btn" onclick="reset3()">Reset</button>
+    </div>
+    <div class="info-text">Equal & opposite forces! Lighter A flies faster, heavier B moves slower — but total momentum stays zero.</div>
+  </div>
+</div>
+
+<script>
+const DPR = window.devicePixelRatio || 1;
+
+function setupCanvas(id) {
+  const c = document.getElementById(id);
+  const w = c.parentElement.offsetWidth || 600;
+  c.width = w * DPR;
+  c.height = 220 * DPR;
+  c.style.width = w + 'px';
+  c.style.height = '220px';
+  const ctx = c.getContext('2d');
+  ctx.scale(DPR, DPR);
+  return { c, ctx, w, h: 220 };
+}
+
+function switchTab(n) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel' + n).classList.add('active');
+  document.querySelectorAll('.tab-btn')[n-1].classList.add('active');
+}
+
+// ───── LAW 1 ─────
+let s1 = { x: 60, vx: 0, friction: 0.08, mass: 30, dist: 0, running: false, raf: null };
+
+function drawLaw1() {
+  const { ctx, w, h } = setupCanvas('c1');
+  ctx.clearRect(0, 0, w, h);
+  const ground = h - 50;
+
+  const fr = s1.friction;
+  const surfColor = fr < 0.2 ? '#1e3a5f' : fr < 0.5 ? '#3b2f1a' : '#3b1a1a';
+  ctx.fillStyle = '#0f0f1a';
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = surfColor;
+  ctx.fillRect(0, ground + 30, w, 20);
+
+  const surfLabel = fr < 0.15 ? 'Ice (near zero friction)' : fr < 0.4 ? 'Smooth floor' : 'Rough carpet';
+  ctx.fillStyle = fr < 0.2 ? '#60a5fa' : fr < 0.4 ? '#fbbf24' : '#f87171';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(surfLabel, w / 2, ground + 44);
+
+  const size = 20 + s1.mass * 0.4;
+  const bx = Math.min(s1.x, w - size - 10);
+  const by = ground - size;
+
+  ctx.fillStyle = '#a78bfa';
+  ctx.beginPath();
+  ctx.roundRect(bx, by, size, size, 6);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${Math.max(10, size * 0.35)}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('m', bx + size / 2, by + size * 0.65);
+
+  if (s1.vx > 0.5) {
+    ctx.strokeStyle = '#a78bfa';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    for (let i = 1; i <= 3; i++) {
+      ctx.globalAlpha = 1 - i * 0.25;
+      ctx.beginPath();
+      ctx.roundRect(bx - i * 14, by, size, size, 6);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+
+  if (s1.vx > 0.3) {
+    ctx.fillStyle = '#c4b5fd';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`v = ${s1.vx.toFixed(1)} m/s →`, bx, by - 8);
+  }
+
+  if (s1.friction > 0.1 && s1.vx > 0.3) {
+    const fx = bx + size / 2;
+    const fy = by + size + 10;
+    ctx.strokeStyle = '#f87171';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(fx, fy);
+    ctx.lineTo(fx - 30, fy);
+    ctx.stroke();
+    ctx.fillStyle = '#f87171';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('friction', fx - 32, fy + 4);
+  }
+}
+
+function updateLaw1() {
+  if (!s1.running) return;
+  const frictionForce = s1.friction * s1.mass * 9.8 * 0.01;
+  s1.vx = Math.max(0, s1.vx - frictionForce);
+  s1.x += s1.vx;
+  s1.dist += s1.vx;
+  if (s1.x > (document.getElementById('c1').parentElement.offsetWidth - 50)) {
+    s1.x = document.getElementById('c1').parentElement.offsetWidth - 50;
+    s1.vx = 0;
+  }
+  document.getElementById('vel1').textContent = s1.vx.toFixed(1) + ' m/s';
+  document.getElementById('dist1').textContent = Math.round(s1.dist / 5) + ' m';
+  document.getElementById('fric1').textContent = Math.round(frictionForce * s1.mass) + ' N';
+  drawLaw1();
+  if (s1.vx > 0.05) s1.raf = requestAnimationFrame(updateLaw1);
+  else { s1.running = false; drawLaw1(); }
+}
+
+function kick1() {
+  s1.vx = 12; s1.running = true; s1.dist = 0;
+  cancelAnimationFrame(s1.raf);
+  s1.raf = requestAnimationFrame(updateLaw1);
+}
+function reset1() {
+  cancelAnimationFrame(s1.raf);
+  s1 = { ...s1, x: 60, vx: 0, dist: 0, running: false };
+  document.getElementById('vel1').textContent = '0 m/s';
+  document.getElementById('dist1').textContent = '0 m';
+  document.getElementById('fric1').textContent = '0 N';
+  drawLaw1();
+}
+function updateFriction() {
+  const v = +document.getElementById('friction').value;
+  s1.friction = v / 100;
+  const labels = ['Zero!', 'Low', 'Medium', 'High', 'Very High'];
+  document.getElementById('frictionVal').textContent = labels[Math.floor(v / 25)] || 'Very High';
+  drawLaw1();
+}
+function updateMass1() {
+  s1.mass = +document.getElementById('mass1').value;
+  document.getElementById('mass1Val').textContent = s1.mass + ' kg';
+  drawLaw1();
+}
+
+// ───── LAW 2 ─────
+let s2 = { x: 60, vx: 0, force: 60, mass: 30, running: false, raf: null };
+
+function drawLaw2() {
+  const { ctx, w, h } = setupCanvas('c2');
+  ctx.clearRect(0, 0, w, h);
+  const ground = h - 50;
+  ctx.fillStyle = '#0f0f1a';
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#1a2a1a';
+  ctx.fillRect(0, ground + 30, w, 20);
+
+  const size = 15 + s2.mass * 0.5;
+  const bx = Math.min(s2.x, w - size - 10);
+  const by = ground - size;
+
+  const ratio = s2.mass / 100;
+  const r = Math.round(255 * ratio);
+  const g = Math.round(200 * (1 - ratio));
+  ctx.fillStyle = `rgb(${r + 100}, ${g + 100}, 80)`;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, size, size, 6);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${Math.max(9, size * 0.3)}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(s2.mass + 'kg', bx + size / 2, by + size * 0.65);
+
+  if (s2.vx > 0.3) {
+    const arrowLen = Math.min(60, s2.vx * 5);
+    ctx.strokeStyle = '#fb923c';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(bx + size, by + size / 2);
+    ctx.lineTo(bx + size + arrowLen, by + size / 2);
+    ctx.stroke();
+    ctx.fillStyle = '#fb923c';
+    ctx.beginPath();
+    ctx.moveTo(bx + size + arrowLen + 8, by + size / 2);
+    ctx.lineTo(bx + size + arrowLen - 6, by + size / 2 - 5);
+    ctx.lineTo(bx + size + arrowLen - 6, by + size / 2 + 5);
+    ctx.fill();
+  }
+
+  const acc = (s2.force / s2.mass).toFixed(1);
+  ctx.fillStyle = '#fdba74';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`a = F/m = ${s2.force}/${s2.mass} = ${acc} m/s²`, w / 2, 24);
+  document.getElementById('s2a').textContent = acc + ' m/s²';
+}
+
+function updateLaw2() {
+  if (!s2.running) return;
+  const acc = s2.force / s2.mass;
+  s2.vx = Math.min(s2.vx + acc * 0.015, 15);
+  s2.x += s2.vx * 0.5;
+  if (s2.x > (document.getElementById('c2').parentElement.offsetWidth - 80)) {
+    s2.running = false; drawLaw2(); return;
+  }
+  drawLaw2();
+  s2.raf = requestAnimationFrame(updateLaw2);
+}
+
+function launch2() {
+  s2.x = 60; s2.vx = 0; s2.running = true;
+  cancelAnimationFrame(s2.raf);
+  s2.raf = requestAnimationFrame(updateLaw2);
+}
+function reset2() {
+  cancelAnimationFrame(s2.raf);
+  s2 = { ...s2, x: 60, vx: 0, running: false };
+  drawLaw2();
+}
+function updateForce2() {
+  s2.force = +document.getElementById('force2').value;
+  document.getElementById('force2Val').textContent = s2.force + ' N';
+  document.getElementById('s2f').textContent = s2.force + ' N';
+  drawLaw2();
+}
+function updateMass2() {
+  s2.mass = +document.getElementById('mass2').value;
+  document.getElementById('mass2Val').textContent = s2.mass + ' kg';
+  document.getElementById('s2m').textContent = s2.mass + ' kg';
+  drawLaw2();
+}
+
+// ───── LAW 3 ─────
+let s3 = { xA: 0, xB: 0, vA: 0, vB: 0, massA: 20, massB: 40, exploded: false, running: false, raf: null };
+
+function drawLaw3() {
+  const { ctx, w, h } = setupCanvas('c3');
+  ctx.clearRect(0, 0, w, h);
+  const ground = h - 50;
+  const cx = w / 2;
+  ctx.fillStyle = '#0f0f1a';
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#1a1a2a';
+  ctx.fillRect(0, ground + 30, w, 20);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 6]);
+  ctx.beginPath(); ctx.moveTo(cx, 20); ctx.lineTo(cx, ground + 30); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('centre', cx, 18);
+
+  const sA = 16 + s3.massA * 0.4;
+  const sB = 16 + s3.massB * 0.4;
+  const axRight = cx - 10 + s3.xA;
+  const bxLeft  = cx + 10 + s3.xB;
+
+  ctx.fillStyle = '#38bdf8';
+  ctx.beginPath();
+  ctx.roundRect(axRight - sA, ground - sA, sA, sA, 6); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${Math.max(9, sA * 0.32)}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(s3.massA + 'kg', axRight - sA / 2, ground - sA * 0.35);
+
+  ctx.fillStyle = '#f472b6';
+  ctx.beginPath();
+  ctx.roundRect(bxLeft, ground - sB, sB, sB, 6); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${Math.max(9, sB * 0.32)}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(s3.massB + 'kg', bxLeft + sB / 2, ground - sB * 0.35);
+
+  if (s3.exploded) {
+    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(axRight - sA, ground - sA / 2); ctx.lineTo(axRight - sA - 30, ground - sA / 2); ctx.stroke();
+    ctx.fillStyle = '#38bdf8'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText('← ' + Math.abs(s3.vA).toFixed(1) + ' m/s', axRight - sA - 32, ground - sA / 2 + 4);
+
+    ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(bxLeft + sB, ground - sB / 2); ctx.lineTo(bxLeft + sB + 30, ground - sB / 2); ctx.stroke();
+    ctx.fillStyle = '#f472b6'; ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(s3.vB.toFixed(1) + ' m/s →', bxLeft + sB + 32, ground - sB / 2 + 4);
+  }
+
+  if (!s3.exploded) {
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Touch to explode!', cx, ground - Math.max(sA, sB) - 10);
+  }
+}
+
+function updateLaw3() {
+  if (!s3.running) return;
+  s3.xA += s3.vA;
+  s3.xB += s3.vB;
+  const mom = (s3.massA * s3.vA + s3.massB * s3.vB).toFixed(1);
+  document.getElementById('vA').textContent = s3.vA.toFixed(1) + ' m/s';
+  document.getElementById('vB').textContent = '+' + s3.vB.toFixed(1) + ' m/s';
+  document.getElementById('mom').textContent = mom;
+  drawLaw3();
+  const w = document.getElementById('c3').parentElement.offsetWidth;
+  if (Math.abs(s3.xA) < w / 2 + 20 && Math.abs(s3.xB) < w / 2 + 20)
+    s3.raf = requestAnimationFrame(updateLaw3);
+  else s3.running = false;
+}
+
+function explode3() {
+  const totalMass = s3.massA + s3.massB;
+  const impulse = 200;
+  s3.vA = -(impulse / s3.massA);
+  s3.vB = (impulse / s3.massB);
+  s3.exploded = true; s3.running = true;
+  cancelAnimationFrame(s3.raf);
+  s3.raf = requestAnimationFrame(updateLaw3);
+}
+function reset3() {
+  cancelAnimationFrame(s3.raf);
+  s3 = { ...s3, xA: 0, xB: 0, vA: 0, vB: 0, exploded: false, running: false };
+  document.getElementById('vA').textContent = '0 m/s';
+  document.getElementById('vB').textContent = '0 m/s';
+  document.getElementById('mom').textContent = '0';
+  drawLaw3();
+}
+function updateMassA() {
+  s3.massA = +document.getElementById('massA').value;
+  document.getElementById('massAVal').textContent = s3.massA + ' kg';
+  reset3();
+}
+function updateMassB() {
+  s3.massB = +document.getElementById('massB').value;
+  document.getElementById('massBVal').textContent = s3.massB + ' kg';
+  reset3();
+}
+
+window.addEventListener('load', () => {
+  drawLaw1(); drawLaw2(); drawLaw3();
+});
+window.addEventListener('resize', () => {
+  drawLaw1(); drawLaw2(); drawLaw3();
+});
+</script>
